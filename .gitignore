@@ -13,6 +13,9 @@ dist/
 build/
 *.tsbuildinfo
 
+# Test outputs
+/test-projects
+
 # Logs
 logs/
 *.log
