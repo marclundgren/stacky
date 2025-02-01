@@ -34,25 +34,23 @@ export class CLI {
       .command("create")
       .description("Create a new project")
       .action(async () => {
-        console.log(0)
-        const passCheck = await this.runSanityCheck();
-        console.log(3, passCheck)
+        const passCheck = !Boolean(process.env.DO_SANITY_CHECK) || await this.runSanityCheck();
 
         if (!passCheck) {
           throw new Error("sanity check failed");
         }
 
-        const projectName = await this.promptProjectName();
+        // const projectName = await this.promptProjectName();
         const userPreferences = await this.promptPreferences();
 
         let shouldExecute = false;
         let plan;
-        const spinner = ora('Fetching AI response...\n')
+        const spinner = ora('thinking...\n')
         spinner.start();
         try {
           // Get AI recommendation and commands
           plan = await this.ai.getScaffoldingPlan(userPreferences);
-          spinner.succeed('AI response received!');
+          spinner.succeed('got it!');
 
           console.log('plan', plan)
 
@@ -79,14 +77,14 @@ export class CLI {
 
           // Show commands and ask for confirmation
           console.log("\nProposed commands:");
-          plan.commands.forEach((cmd) => console.log(`- ${cmd}`));
+          plan.commands.forEach((cmd) => console.log(`- ${cmd.command}`));
 
           const { shouldExecute: _shouldExecute } = await inquirer.prompt([
             {
               type: "confirm",
               name: "shouldExecute",
               message: "Would you like me to run these commands for you?",
-              default: false,
+              default: true,
             },
           ]);
           shouldExecute = _shouldExecute;
@@ -97,7 +95,7 @@ export class CLI {
 
         if (shouldExecute && plan) {
           try {
-            await this.scaffolder.executeCommands(projectName, plan.commands);
+            await this.scaffolder.executeCommands('.', plan.commands);
             console.log("✨ Project successfully scaffolded!");
           } catch (error) {
             console.error("Failed to scaffold project:", error);
@@ -132,21 +130,21 @@ export class CLI {
     program.parse();
   }
 
-  private async promptProjectName(): Promise<string> {
-    const { projectName } = await inquirer.prompt([
-      {
-        type: "input",
-        name: "projectName",
-        message: "What is your project name?",
-        validate: (input: string) => {
-          if (/^[a-z0-9-]+$/.test(input)) return true;
-          return "Project name can only contain lowercase letters, numbers, and hyphens";
-        },
-        default: 'my-test-app'
-      },
-    ]);
-    return projectName;
-  }
+  // private async promptProjectName(): Promise<string> {
+  //   const { projectName } = await inquirer.prompt([
+  //     {
+  //       type: "input",
+  //       name: "projectName",
+  //       message: "What is your project name?",
+  //       validate: (input: string) => {
+  //         if (/^[a-z0-9-]+$/.test(input)) return true;
+  //         return "Project name can only contain lowercase letters, numbers, and hyphens";
+  //       },
+  //       default: 'my-test-app'
+  //     },
+  //   ]);
+  //   return projectName;
+  // }
 
   private async promptPreferences(): Promise<Partial<ProjectConfig>> {
     // todo use type checking for these choices

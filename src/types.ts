@@ -13,10 +13,11 @@ export interface CommandValidation {
   exists: boolean;
 }
 
-// export interface Command {
-//   name: string;
-// }
-export type Command = string;
+export interface Command {
+  name: string;
+  command: string;
+}
+// export type Command = string;
 
 export interface Plan {
   description: string;

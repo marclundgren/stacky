@@ -5,14 +5,14 @@ export class CommandValidator {
   static async validateCommand(command: Command): Promise<boolean> {
     try {
       // Extract the base command (e.g., 'npm' from 'npm install')
-      const baseCommand = command.split(" ")[0];
+      const baseCommand = command.command.split(" ")[0];
 
       // Check if command exists in PATH
       execSync(`which ${baseCommand}`, { stdio: "ignore" });
       return true;
     } catch {
-      console.table({command})
-      console.log(`didn't find base command: \`${command.split(" ")[0]}\``)
+      // console.log(`command: ${command}, ${JSON.stringify(command)}`)
+      console.log(`didn't find base command: \`${command.command.split(" ")[0]}\``)
       return false;
     }
   }

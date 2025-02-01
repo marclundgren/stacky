@@ -36,8 +36,8 @@ export class OllamaAI {
 
     for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
       try {
-        console.log(`Attempting to fetch Ollama response (attempt ${attempt}/${this.maxRetries})...`);
-        console.log(`model: ${this.model}`);
+        // console.log(`Attempting to fetch Ollama response (attempt ${attempt}/${this.maxRetries})...`);
+        // console.log(`model: ${this.model}`);
         // console.log(`messages: ${JSON.stringify(messages)}`);
         const response = await this.ollama.chat({
           model: this.model,
