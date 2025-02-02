@@ -2,12 +2,12 @@
   "name": "stacky",
   "version": "0.0.1",
   "main": "bind/stacky.ts",
-  "type": "commonjs",
+  "type": "module",
   "scripts": {
     "build": "tsc",
-    "start": "ts-node bin/stacky.ts",
-    "dev": "nodemon bin/stacky.ts",
-    "sanity": "ts-node sanity.ts",
+    "start": "node --loader ts-node/esm bin/stacky.ts",
+    "dev": "nodemon --exec 'tsx' bin/stacky.ts",
+    "sanity": "nodemon --exec 'tsx' bin/sanity.ts",
     "local": "npm run build && npm link",
     "lint": "eslint . --ext .ts",
     "test": "jest",
@@ -38,6 +38,7 @@
     "prettier": "3.4.2",
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
+    "tsx": "^4.19.2",
     "typescript": "^5.7.3"
   }
 }

@@ -23,8 +23,6 @@ export class CLI {
   async run() {
     const program = new Command();
 
-    console.log(-1)
-
     program
       .name("stacky")
       .description("AI-powered project scaffolding tool")
@@ -110,9 +108,7 @@ export class CLI {
       .description("sanity check")
       // .version("0.0.1")
       .action(async () => {
-        console.log(1)
         const ollama = new Ollama({ host: 'http://localhost:11435' })
-        console.log(2)
         try {
           const response = await ollama.chat({
             model: 'qwen2.5-coder:latest',
@@ -194,28 +190,21 @@ export class CLI {
   }
 
   private async runSanityCheck() {
-    console.log(1)
     const ollama = new Ollama({ host: String(process.env.OLLAMA_HOST) })
-    console.log(2)
     try {
       const { models } = await ollama.ps();
-      console.log(2.1)
       process.stdout.write('\nmodels: \n');
-      console.log(2.2)
       models.forEach((model) => {
         process.stdout.write(`${model.name}\n`);
       })
-      console.log(2.3)
 
       if (!models.length) {
         throw (new Error('no running models on this host'));
       }
-      console.log(2.4)
       const response = await ollama.chat({
         model: String(process.env.OLLAMA_MODEL),
         messages: [{ role: 'user', content: 'Why is the sky blue?' }],
       })
-      console.log(2.5)
 
       console.log(response.message);
       console.log('✅ sanity check')
