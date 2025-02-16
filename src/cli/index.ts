@@ -9,6 +9,7 @@ import { OllamaAI } from "../ai/ollama.js";
 import { createAIClient } from "../ai/factory.js";
 import { Ollama } from "ollama";
 import { CommandTransformer } from "../utils/command-transformer.js";
+import { log } from "utils/log.js";
 
 dotenv.config();
 
@@ -34,7 +35,7 @@ export class CLI {
       .description("Create a new project")
       .action(async () => {
         const passCheck =
-          !Boolean(process.env.DO_SANITY_CHECK) ||
+          !process.env.DO_SANITY_CHECK ||
           (await this.runSanityCheck());
 
         if (!passCheck) {
@@ -59,7 +60,7 @@ export class CLI {
 
           spinner.succeed("got it!");
 
-          console.log("plan", plan);
+          log('verbose', "plan", plan);
 
           if (!plan) {
             throw new Error("could not find plan");
@@ -74,21 +75,23 @@ export class CLI {
           const missingCommands = validations.filter((v) => !v.exists);
 
           if (missingCommands.length > 0) {
-            console.log(
+            log(
+              'info',
               "The following required commands are not available in your environment:"
             );
             missingCommands.forEach((validation) =>
-              console.log(`- ${validation.command.command}`)
+              log('verbose', `- ${validation.command.command}`)
             );
-            console.log(
+            log(
+              'info',
               "Please install the missing dependencies and try again."
             );
             return;
           }
 
           // Show commands and ask for confirmation
-          console.log("\nProposed commands:");
-          plan.commands.forEach((cmd) => console.log(`- ${cmd.command}`));
+          log('info', "Proposed commands:");
+          plan.commands.forEach((cmd) => log('info', `- ${cmd.command}`));
 
           const { shouldExecute: _shouldExecute } = await inquirer.prompt([
             {
@@ -108,12 +111,12 @@ export class CLI {
         if (shouldExecute && plan) {
           try {
             await this.scaffolder.executeCommands(".", plan.commands);
-            console.log("✨ Project successfully scaffolded!");
+            log('info', "✨ Project successfully scaffolded!");
           } catch (error) {
             console.error("Failed to scaffold project:", error);
           }
         } else {
-          console.log("Commands were not executed. You can run them manually.");
+          log('info', "Commands were not executed. You can run them manually.");
         }
       });
 
@@ -121,12 +124,38 @@ export class CLI {
   }
 
   private async promptPreferences(): Promise<Partial<ProjectConfig>> {
+    const frameworkResponse = await inquirer.prompt([
+      {
+        type: "list",
+        name: "metaFramework",
+        message: "Which framework would you like to use?",
+        choices: [
+          { name: "Next.js (Recommended for web apps)", value: "next" },
+          {
+            name: "React Router (Recommended for SPAs)",
+            value: "react-router",
+          },
+          { name: "Expo (Recommended for mobile apps)", value: "expo" },
+          { name: "Create React App (Deprecated)", value: "cra" },
+          { name: "None (Vanilla React)", value: "none" },
+        ],
+      },
+    ]);
+
+    // If they chose a meta framework, we can skip some questions that would be handled by the framework
+    const isMetaFramework = ["next", "expo"].includes(
+      frameworkResponse.metaFramework
+    );
+
     return inquirer.prompt([
       {
         type: "list",
         name: "framework",
-        message: "Which framework would you like to use?",
+        message: "Which UI framework would you like to use?",
         choices: ["react", "vue", "svelte", "angular", "solid"],
+        when: () =>
+          !frameworkResponse.metaFramework ||
+          frameworkResponse.metaFramework === "none",
       },
       {
         type: "list",
@@ -145,6 +174,7 @@ export class CLI {
         name: "bundler",
         message: "Which build tool would you like to use?",
         choices: ["vite", "webpack", "turbopack", "esbuild"],
+        when: () => !isMetaFramework, // Skip if using Next.js or Expo as they handle bundling
       },
       {
         type: "list",
@@ -162,13 +192,24 @@ export class CLI {
         type: "list",
         name: "stateManagement",
         message: "Would you like to add state management?",
-        choices: ["redux", "zustand", "jotai", "none"],
+        choices: [
+          { name: "Redux (Complex state with middleware)", value: "redux" },
+          { name: "Zustand (Simple state management)", value: "zustand" },
+          { name: "Jotai (Atomic state management)", value: "jotai" },
+          { name: "None", value: "none" },
+        ],
       },
       {
         type: "list",
         name: "testing",
         message: "Which testing framework would you like to use?",
-        choices: ["jest", "vitest", "playwright", "cypress", "none"],
+        choices: [
+          { name: "Jest (Unit & Integration)", value: "jest" },
+          { name: "Vitest (Fast alternative to Jest)", value: "vitest" },
+          { name: "Playwright (E2E testing)", value: "playwright" },
+          { name: "Cypress (E2E testing)", value: "cypress" },
+          { name: "None", value: "none" },
+        ],
       },
       {
         type: "checkbox",
@@ -191,7 +232,12 @@ export class CLI {
         type: "list",
         name: "apiClient",
         message: "Which API client would you like to use?",
-        choices: ["axios", "fetch", "react-query/tanstack", "swr"],
+        choices: [
+          { name: "React Query/TanStack (Recommended)", value: "react-query" },
+          { name: "SWR (Lightweight alternative)", value: "swr" },
+          { name: "Axios (HTTP client only)", value: "axios" },
+          { name: "Fetch (Browser native)", value: "fetch" },
+        ],
       },
       {
         type: "confirm",
@@ -225,8 +271,8 @@ export class CLI {
         messages: [{ role: "user", content: "Why is the sky blue?" }],
       });
 
-      console.log(response.message);
-      console.log("✅ sanity check");
+      log('info', response.message);
+      log('info', "✅ sanity check");
 
       return true;
     } catch (err) {

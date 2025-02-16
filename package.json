@@ -1,11 +1,14 @@
 {
   "name": "stacky",
   "version": "0.0.1",
-  "main": "bind/stacky.ts",
+  "main": "bin/stacky.ts",
   "type": "module",
+  "bin": {
+    "stacky": "./bin/stacky.js"
+  },
   "scripts": {
     "build": "tsc",
-    "start": "tsx bin/stacky.ts",
+    "start": "NODE_NO_WARNINGS=1 tsx bin/stacky.ts",
     "dev": "nodemon --exec 'tsx' bin/stacky.ts",
     "reset-cache": "rm .cache/ai-responses.json",
     "sanity": "nodemon --exec 'tsx' bin/sanity.ts",
@@ -19,28 +22,30 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@openai/openai": "npm:@jsr/openai__openai@^4.80.1",
     "commander": "^13.1.0",
     "dotenv": "^16.4.7",
     "inquirer": "^12.3.2",
     "ollama": "^0.5.12",
-    "openai": "^4.80.1",
+    "openai": "^4.85.1",
     "ora": "^8.1.1",
     "ts-loader": "^9.5.2"
   },
   "devDependencies": {
+    "@eslint/js": "^9.20.0",
     "@types/inquirer": "^9.0.7",
     "@types/node": "^22.10.10",
     "@typescript-eslint/eslint-plugin": "^8.21.0",
     "@typescript-eslint/parser": "^8.21.0",
     "autoprefixer": "^10.4.20",
-    "eslint": "^9.19.0",
+    "eslint": "^9.20.1",
+    "globals": "^15.15.0",
     "nodemon": "^3.1.9",
     "postcss": "^8.5.2",
     "prettier": "3.4.2",
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.24.0"
   }
 }

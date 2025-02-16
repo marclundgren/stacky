@@ -1,6 +1,8 @@
 #!/usr/bin/env node
+
 import { CLI } from "cli/index.js";
 import dotenv from "dotenv";
+import { log } from "utils/log.js";
 
 dotenv.config();
 
@@ -12,7 +14,7 @@ if (!useOllama && !apiKey) {
   process.exit(1);
 }
 
-console.log("Environment config:", {
+log('info', "Environment config:", {
   useOllama,
   ollamaUrl: process.env.OLLAMA_HOST,
   ollamaModel: process.env.OLLAMA_MODEL,

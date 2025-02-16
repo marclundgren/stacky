@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { Ollama } from 'ollama'
 import dotenv from "dotenv";
 

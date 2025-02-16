@@ -1,5 +1,6 @@
 import { execSync } from "child_process";
 import { Command, CommandValidation } from "../types.js";
+import { log } from "./log.js";
 
 const defaultShellBuiltins = [
   "cd",
@@ -20,10 +21,10 @@ export class CommandValidator {
       const baseCommand = command.command.split(" ")[0];
       // Check if it's a shell builtin
       if (this.getShellBuiltins().has(baseCommand)) {
-        console.log(`found ${baseCommand} in shell builtins`);
+        log('verbose', `found ${baseCommand} in shell builtins`);
         return true;
       } else {
-        console.log(`didnt find ${baseCommand} in shell builtins`);
+        log('verbose', `didnt find ${baseCommand} in shell builtins`);
       }
 
       // For npm commands starting with npx, validate npm instead
@@ -37,8 +38,7 @@ export class CommandValidator {
       return true;
     } catch (error) {
       console.error(error);
-      console.log(`Command not found: ${JSON.stringify(command)}`);
-      // console.log(`Command not found: ${command.command.split(" ")[0]}`);
+      log('verbose', `Command not found: ${JSON.stringify(command)}`);
       return false;
     }
   }
@@ -71,7 +71,8 @@ export class CommandValidator {
 
       this.shellBuiltins = new Set([...defaultShellBuiltins, ...bashBuiltins]);
       return this.shellBuiltins;
-    } catch (error) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (err) {
       // Fallback to a minimal set of essential builtins if shell commands fail
       console.warn("Failed to detect shell builtins, falling back to defaults");
       return new Set(["cd", "pwd", "mkdir", "rm", "cp", "mv", "ls", "echo"]);

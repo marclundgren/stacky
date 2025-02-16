@@ -2,6 +2,7 @@ import ollama, { type Ollama } from "ollama";
 import { Plan, ProjectConfig } from "../types.js";
 import { Cache } from "../utils/cache.js";
 import { delay } from "../utils/delay.js";
+import { log } from "console";
 
 export class OllamaAI {
   private ollama: Ollama;
@@ -38,15 +39,12 @@ export class OllamaAI {
 
     for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
       try {
-        // console.log(`Attempting to fetch Ollama response (attempt ${attempt}/${this.maxRetries})...`);
-        // console.log(`model: ${this.model}`);
-        // console.log(`messages: ${JSON.stringify(messages)}`);
         const response = await this.ollama.chat({
           model: this.model,
           messages,
         });
 
-        console.log(`response: ${JSON.stringify(response)}`);
+        log('info', `response: ${JSON.stringify(response)}`);
         const { content } = response.message;
         try {
           const cleanContent = content.replace(/```json\n|\n```/g, "");
@@ -65,7 +63,7 @@ export class OllamaAI {
 
         if (attempt < this.maxRetries) {
           const waitTime = this.retryDelay * attempt;
-          console.log(`Waiting ${waitTime}ms before retry...`);
+          log('info', `Waiting ${waitTime}ms before retry...`);
           await delay(waitTime);
         }
       }

@@ -4,6 +4,7 @@ import path from "path";
 import { Command, CommandValidation } from "../types.js";
 import { CommandValidator } from "../utils/command-validator.js";
 import util from "util";
+import { log } from "utils/log.js";
 
 const execPromise = util.promisify(exec);
 
@@ -13,8 +14,8 @@ export class ProjectScaffolder {
   constructor(baseDir: string = String(process.env.SANDBOX_DIR)) {
     // Ensure the base directory is an absolute path
     this.baseDir = path.resolve(process.cwd(), baseDir);
-    console.log(`this.baseDir: ${this.baseDir}`);
-    console.log(`process.cwd(): ${process.cwd()}`);
+    log('verbose', `this.baseDir: ${this.baseDir}`);
+    log('verbose', `process.cwd(): ${process.cwd()}`);
 
     if (!existsSync(this.baseDir)) {
       mkdirSync(this.baseDir, { recursive: true });
@@ -38,14 +39,14 @@ export class ProjectScaffolder {
 
     for (const command of commands) {
       try {
-        console.log(`\nExecuting: ${command.command}`);
-        console.log(`Working directory: ${projectDir}\n`);
+        log('info', `Executing: ${command.command}`);
+        log('verbose', `Working directory: ${projectDir}\n`);
 
         // For cd commands, we'll update the working directory instead
         if (command.command.startsWith("cd ")) {
           const newDir = command.command.split(" ")[1];
           process.chdir(path.join(projectDir, newDir));
-          console.log(`Changed directory to: ${process.cwd()}`);
+          log('verbose', `Changed directory to: ${process.cwd()}`);
           continue;
         }
 
@@ -55,7 +56,7 @@ export class ProjectScaffolder {
           maxBuffer: 1024 * 1024 * 10, // 10MB buffer
         });
 
-        if (stdout) console.log(stdout);
+        if (stdout) log('info', stdout);
         if (stderr) console.error(stderr);
 
         // Add a small delay between commands to ensure proper sequencing

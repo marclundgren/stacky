@@ -1,10 +1,11 @@
 import { Command } from "../types.js";
+import { log } from "./log.js";
 
 export class CommandTransformer {
   static transformCommand(rawCommand: Command | string): Command {
     const command = this.normalizeCommand(rawCommand);
     // If it's a create-react-app command and doesn't already have --yes
-    console.log(`command: ${JSON.stringify(command)}`);
+    log('verbose', `command: ${JSON.stringify(command)}`);
     // debugger;
     if (
       command.command.includes("npx create-react-app") &&
