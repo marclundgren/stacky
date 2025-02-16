@@ -65,6 +65,30 @@ npm run dev
 OLLAMA_HOST=0.0.0.0 ollama serve
 ```
 
+## Troubleshooting
+
+Are you connected to Ollama?
+
+```sh
+curl http://localhost:11434/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "qwen2.5-coder:latest",
+    "messages": [{"role": "user", "content": "hi"}]
+  }'
+```
+
+...or are you connecting to a remote device?
+
+```sh
+curl http://Marcs-MacBook-Pro.local:11434/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "qwen2.5-coder:latest",
+    "messages": [{"role": "user", "content": "hi"}]
+  }'
+```
+
 ## Links
 
 - [Deepseek API](https://api-docs.deepseek.com/)
