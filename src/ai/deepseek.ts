@@ -1,6 +1,6 @@
 import OpenAI from "openai";
-import { Plan, ProjectConfig } from "../types";
-import { Cache } from "../utils/cache";
+import { Plan, ProjectConfig } from "../types.js";
+import { Cache } from "../utils/cache.js";
 
 const model = String(process.env.DEEPSEEK_MODEL);
 
@@ -16,7 +16,9 @@ export class DeepSeekAI {
     this.cache = new Cache();
   }
 
-  async getScaffoldingPlan(userPreferences: Partial<ProjectConfig>): Promise<Plan> {
+  async getScaffoldingPlan(
+    userPreferences: Partial<ProjectConfig>
+  ): Promise<Plan> {
     const cached = this.cache.get(userPreferences);
     if (cached) return cached;
 
@@ -26,7 +28,7 @@ export class DeepSeekAI {
         {
           role: "system",
           content:
-            "You are a web development expert. Generate project configurations and necessary CLI commands based on user preferences. Return ONLY valid JSON without any markdown formatting.",
+            "You are a web development expert. Generate project configurations and necessary CLI commands based on user preferences. Return ONLY valid JSON without any markdown formatting. If any of the CLI commands start with npx, then append it with --yes",
         },
         {
           role: "user",
@@ -44,7 +46,7 @@ export class DeepSeekAI {
     } catch (error) {
       console.error(
         "Failed to parse AI response:",
-        response.choices[0].message.content,
+        response.choices[0].message.content
       );
       throw error;
     }

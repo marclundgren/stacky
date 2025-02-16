@@ -1,13 +1,14 @@
-import ora from 'ora';
+import ora from "ora";
 import dotenv from "dotenv";
-import { Command } from "commander";
-import { ProjectConfig } from "../types";
-import { DeepSeekAI } from "../ai/deepseek";
-import { ProjectScaffolder } from "../scaffolder";
+import { Command as CommanderCommand } from "commander";
+import { ProjectConfig } from "../types.js";
+import { DeepSeekAI } from "../ai/deepseek.js";
+import { ProjectScaffolder } from "../scaffolder/index.js";
 import inquirer from "inquirer";
-import { OllamaAI } from '../ai/ollama';
-import { createAIClient } from '../ai/factory';
-import { Ollama } from 'ollama';
+import { OllamaAI } from "../ai/ollama.js";
+import { createAIClient } from "../ai/factory.js";
+import { Ollama } from "ollama";
+import { CommandTransformer } from "../utils/command-transformer.js";
 
 dotenv.config();
 
@@ -15,13 +16,13 @@ export class CLI {
   private ai: DeepSeekAI | OllamaAI;
   private scaffolder: ProjectScaffolder;
 
-  constructor(apiKey: string) {
+  constructor() {
     this.ai = createAIClient();
     this.scaffolder = new ProjectScaffolder();
   }
 
   async run() {
-    const program = new Command();
+    const program = new CommanderCommand();
 
     program
       .name("stacky")
@@ -32,25 +33,33 @@ export class CLI {
       .command("create")
       .description("Create a new project")
       .action(async () => {
-        const passCheck = !Boolean(process.env.DO_SANITY_CHECK) || await this.runSanityCheck();
+        const passCheck =
+          !Boolean(process.env.DO_SANITY_CHECK) ||
+          (await this.runSanityCheck());
 
         if (!passCheck) {
           throw new Error("sanity check failed");
         }
 
-        // const projectName = await this.promptProjectName();
         const userPreferences = await this.promptPreferences();
 
         let shouldExecute = false;
         let plan;
-        const spinner = ora('thinking...\n')
+        const spinner = ora("thinking...\n");
         spinner.start();
+
         try {
           // Get AI recommendation and commands
           plan = await this.ai.getScaffoldingPlan(userPreferences);
-          spinner.succeed('got it!');
 
-          console.log('plan', plan)
+          // Transform commands after receiving them from AI
+          if (plan && plan.commands) {
+            plan.commands = CommandTransformer.transformCommands(plan.commands);
+          }
+
+          spinner.succeed("got it!");
+
+          console.log("plan", plan);
 
           if (!plan) {
             throw new Error("could not find plan");
@@ -58,7 +67,7 @@ export class CLI {
 
           // Validate commands
           const validations = await this.scaffolder.validateEnvironment(
-            plan.commands,
+            plan.commands
           );
 
           // Check if all commands are available
@@ -66,10 +75,14 @@ export class CLI {
 
           if (missingCommands.length > 0) {
             console.log(
-              "The following required commands are not available in your environment:",
+              "The following required commands are not available in your environment:"
             );
-            missingCommands.forEach((cmd) => console.log(`- ${cmd.command}`));
-            console.log("Please install the missing dependencies and try again.");
+            missingCommands.forEach((validation) =>
+              console.log(`- ${validation.command.command}`)
+            );
+            console.log(
+              "Please install the missing dependencies and try again."
+            );
             return;
           }
 
@@ -87,13 +100,14 @@ export class CLI {
           ]);
           shouldExecute = _shouldExecute;
         } catch (error) {
-          spinner.fail('Failed to fetch AI response');
+          spinner.fail("Failed to fetch AI response");
           console.error(error);
+          return;
         }
 
         if (shouldExecute && plan) {
           try {
-            await this.scaffolder.executeCommands('.', plan.commands);
+            await this.scaffolder.executeCommands(".", plan.commands);
             console.log("✨ Project successfully scaffolded!");
           } catch (error) {
             console.error("Failed to scaffold project:", error);
@@ -103,53 +117,16 @@ export class CLI {
         }
       });
 
-    program
-      .name("sanity")
-      .description("sanity check")
-      // .version("0.0.1")
-      .action(async () => {
-        const ollama = new Ollama({ host: 'http://localhost:11435' })
-        try {
-          const response = await ollama.chat({
-            model: 'qwen2.5-coder:latest',
-            messages: [{ role: 'user', content: 'Why is the sky blue?' }],
-          })
-  
-          console.log(response.message);
-          console.log('✅ sanity check')
-        } catch(err) {
-          console.error(err)
-          console.error('❌ sanity check')
-        }
-      })
-
     program.parse();
   }
 
-  // private async promptProjectName(): Promise<string> {
-  //   const { projectName } = await inquirer.prompt([
-  //     {
-  //       type: "input",
-  //       name: "projectName",
-  //       message: "What is your project name?",
-  //       validate: (input: string) => {
-  //         if (/^[a-z0-9-]+$/.test(input)) return true;
-  //         return "Project name can only contain lowercase letters, numbers, and hyphens";
-  //       },
-  //       default: 'my-test-app'
-  //     },
-  //   ]);
-  //   return projectName;
-  // }
-
   private async promptPreferences(): Promise<Partial<ProjectConfig>> {
-    // todo use type checking for these choices
     return inquirer.prompt([
       {
         type: "list",
         name: "framework",
         message: "Which framework would you like to use?",
-        choices: ["react", "vue", "svelte"],
+        choices: ["react", "vue", "svelte", "angular", "solid"],
       },
       {
         type: "list",
@@ -159,62 +136,103 @@ export class CLI {
       },
       {
         type: "list",
+        name: "packageManager",
+        message: "Which package manager would you like to use?",
+        choices: ["npm", "yarn", "pnpm"],
+      },
+      {
+        type: "list",
         name: "bundler",
-        message: "Which bundler would you like to use?",
-        choices: ["vite", "webpack"],
+        message: "Which build tool would you like to use?",
+        choices: ["vite", "webpack", "turbopack", "esbuild"],
       },
       {
         type: "list",
         name: "cssFramework",
-        message: "Would you like to use Tailwind CSS?",
-        choices: ["tailwind", "none"],
+        message: "Which CSS framework would you like to use?",
+        choices: [
+          "tailwind",
+          "sass/scss",
+          "styled-components",
+          "css modules",
+          "none",
+        ],
       },
       {
-        type: "confirm",
-        name: "linting",
-        message: "Would you like to add linting?",
+        type: "list",
+        name: "stateManagement",
+        message: "Would you like to add state management?",
+        choices: ["redux", "zustand", "jotai", "none"],
       },
       {
         type: "list",
         name: "testing",
-        message: "Would you like to add testing?",
-        choices: ["jest", "vitest", "none"],
+        message: "Which testing framework would you like to use?",
+        choices: ["jest", "vitest", "playwright", "cypress", "none"],
+      },
+      {
+        type: "checkbox",
+        name: "tooling",
+        message: "Select additional development tools:",
+        choices: [
+          { name: "ESLint", value: "eslint" },
+          { name: "Prettier", value: "prettier" },
+          { name: "Husky (Git Hooks)", value: "husky" },
+          { name: "Commitlint", value: "commitlint" },
+        ],
+      },
+      {
+        type: "confirm",
+        name: "api",
+        message: "Would you like to add API integration setup?",
+      },
+      {
+        when: (answers) => answers.api,
+        type: "list",
+        name: "apiClient",
+        message: "Which API client would you like to use?",
+        choices: ["axios", "fetch", "react-query/tanstack", "swr"],
+      },
+      {
+        type: "confirm",
+        name: "docker",
+        message: "Would you like to add Docker configuration?",
       },
       {
         type: "list",
-        name: "code formatting",
-        message: "Would you like to add a code formatter?",
-        choices: ["prettier", "eslint", "none"],
-      }
+        name: "deployment",
+        message: "Would you like to add CI/CD configuration?",
+        choices: ["github-actions", "gitlab-ci", "circle-ci", "none"],
+      },
     ]);
   }
 
   private async runSanityCheck() {
-    const ollama = new Ollama({ host: String(process.env.OLLAMA_HOST) })
+    const ollama = new Ollama({ host: String(process.env.OLLAMA_HOST) });
     try {
       const { models } = await ollama.ps();
-      process.stdout.write('\nmodels: \n');
+      process.stdout.write("\nmodels: \n");
       models.forEach((model) => {
         process.stdout.write(`${model.name}\n`);
-      })
+      });
 
       if (!models.length) {
-        throw (new Error('no running models on this host'));
+        throw new Error("no running models on this host");
       }
+
       const response = await ollama.chat({
         model: String(process.env.OLLAMA_MODEL),
-        messages: [{ role: 'user', content: 'Why is the sky blue?' }],
-      })
+        messages: [{ role: "user", content: "Why is the sky blue?" }],
+      });
 
       console.log(response.message);
-      console.log('✅ sanity check')
+      console.log("✅ sanity check");
 
-      return models;
-    } catch(err) {
-      console.error(err)
-      console.error('❌ sanity check')
+      return true;
+    } catch (err) {
+      console.error(err);
+      console.error("❌ sanity check");
+      return false;
     }
-    console.log(2.6)
-    return false;
   }
 }

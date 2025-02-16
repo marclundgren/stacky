@@ -10,7 +10,7 @@ Stacky streamlines the process of creating new web applications by leveraging AI
 
 ```sh
 # Clone the repository
-git clone https://github.com/yourusername/stacky.git
+git clone https://github.com/marclundgren/stacky.git
 cd stacky
 
 # Install dependencies
@@ -55,6 +55,15 @@ npm run dev
 
 - `npm run build` - Build the project
 - `npm run start` - Run the CLI
+
+## Connecting to Ollama over tailscale
+
+```sh
+# On the device you wish to host ollama service...
+# 1. quick ollama if its running
+# 2. host the service over all network bindings
+OLLAMA_HOST=0.0.0.0 ollama serve
+```
 
 ## Links
 

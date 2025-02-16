@@ -1,7 +1,7 @@
-import ollama, { type Ollama } from 'ollama'
-import { Plan, ProjectConfig } from "../types";
-import { Cache } from "../utils/cache";
-import { delay } from '../utils/delay';
+import ollama, { type Ollama } from "ollama";
+import { Plan, ProjectConfig } from "../types.js";
+import { Cache } from "../utils/cache.js";
+import { delay } from "../utils/delay.js";
 
 export class OllamaAI {
   private ollama: Ollama;
@@ -16,21 +16,23 @@ export class OllamaAI {
     this.cache = new Cache();
   }
 
-  async getScaffoldingPlan(userPreferences: Partial<ProjectConfig>): Promise<Plan> {
+  async getScaffoldingPlan(
+    userPreferences: Partial<ProjectConfig>
+  ): Promise<Plan> {
     const cached = this.cache.get(userPreferences);
     if (cached) return cached;
 
     const messages = [
-        {
-          role: "system",
-          content:
-            "You are a web development expert. Generate project configurations and necessary CLI commands based on user preferences. Return ONLY valid JSON without any markdown formatting.",
-        },
-        {
-          role: "user",
-          content: `Generate a configuration JSON with 'config' and 'commands' arrays for: ${JSON.stringify(userPreferences)}`,
-        },
-      ]
+      {
+        role: "system",
+        content:
+          "You are a web development expert. Generate project configurations and necessary CLI commands based on user preferences for installing and setting up a project. Omit any CLI commands for starting development services. Return ONLY valid JSON without any markdown formatting.",
+      },
+      {
+        role: "user",
+        content: `Generate a configuration JSON with 'config' and 'commands' arrays for: ${JSON.stringify(userPreferences)}`,
+      },
+    ];
 
     let lastError: Error | null = null;
 
@@ -41,7 +43,7 @@ export class OllamaAI {
         // console.log(`messages: ${JSON.stringify(messages)}`);
         const response = await this.ollama.chat({
           model: this.model,
-          messages
+          messages,
         });
 
         console.log(`response: ${JSON.stringify(response)}`);
@@ -52,17 +54,15 @@ export class OllamaAI {
           this.cache.set(userPreferences, result);
           return result;
         } catch (error) {
-          console.error(
-            "Failed to parse AI response:",
-            content,
-          );
+          console.error("Failed to parse AI response:", content);
           throw error;
         }
       } catch (error) {
         lastError = error as Error;
-        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
         console.error(`Attempt ${attempt} failed:`, errorMessage);
-        
+
         if (attempt < this.maxRetries) {
           const waitTime = this.retryDelay * attempt;
           console.log(`Waiting ${waitTime}ms before retry...`);
@@ -71,8 +71,10 @@ export class OllamaAI {
       }
     }
 
-    console.error('All attempts to reach Ollama failed. Is Ollama running?');
-    console.error('Try running: ollama serve');
-    throw new Error(`Failed to fetch Ollama response after ${this.maxRetries} attempts: ${lastError?.message}`);
+    console.error("All attempts to reach Ollama failed. Is Ollama running?");
+    console.error("Try running: ollama serve");
+    throw new Error(
+      `Failed to fetch Ollama response after ${this.maxRetries} attempts: ${lastError?.message}`
+    );
   }
 }
