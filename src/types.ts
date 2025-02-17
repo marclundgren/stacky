@@ -1,11 +1,22 @@
 export interface ProjectConfig {
-  framework: "react" | "vue" | "svelte";
+  metaFramework?: "next" | "react-router" | "expo" | "none";
+  framework?: "react" | "vue" | "svelte";
   language: "typescript" | "javascript";
-  bundler: "vite" | "webpack";
+  bundler?: "vite" | "webpack";
   cssFramework?: "tailwind" | "none";
-  // platform: 'unix' | 'windows' | 'any';
   testing?: "jest" | "vitest" | "none";
   linting?: "eslint" | "none";
+  packageManager?: "npm" | "yarn" | "pnpm";
+  stateManagement?: "redux" | "zustand" | "jotai" | "none";
+  tooling?: string[];
+  api?: boolean;
+  apiClient?: "react-query" | "swr" | "axios" | "fetch";
+  docker?: boolean;
+  dockerConfig?: {
+    baseImage: string;
+    port?: string;
+  };
+  deployment?: "github-actions" | "gitlab-ci" | "circle-ci" | "none";
 }
 
 export interface CommandValidation {
@@ -17,7 +28,6 @@ export interface Command {
   name: string;
   command: string;
 }
-// export type Command = string;
 
 export interface Plan {
   description: string;
